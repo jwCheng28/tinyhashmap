@@ -1,0 +1,48 @@
+## Initial Design
+
+# Building Blocks
+The key idea of the hashmap should be simple. In essence, the data structure is an array of key-value (char*-anytype) nodes, 
+where the keys could be hash to an index in the array.
+
+typedef struct {char *key, void *value} item;
+typedef struct {unsigned int max_size, unsigned int num_item, item **item_array} hash_map;
+
+The hashmap would primarily have 3 functions insert_item(), get_item(), and delete_item().
+And the ideal implementation for these functions should be avg O(1) time (worst case O(n)).
+
+// insert
+ - creates item, gets index after hash
+ - attempts to insert item
+    - if slot empty || slot deleted -> insert
+    - else -> go insert at next empty slot (open addressing)
+
+// get
+ - gets index based on key hash
+ - checks if item exist at index
+    - if slot null -> return NULL
+    - if slot not null
+        - if slot_item == item -> return slot_item_val
+        - else -> go check next slot
+
+// delete
+ - gets index based on key hash
+ - checks if item exist at index
+    - if slot null -> return NULL
+    - if slot not null
+        - if slot_item == item -> delete item
+        - else -> go check next slot
+
+To facilitate this design, deleted slot would be mark as deleted rather than just a simple NULL.
+This could be done with a global reference to item DELETED = NULL; thus, all deleted items could be reference with &DELETED
+
+There are also some other functions that we need to have for a functioning hashmap.
+
+// Constructors and Destructors
+ - Should be trivial, simply create functions for all objects that needs to be created and deleted
+
+// Hashing
+ - As of now, I'll just use a made-up hashing function by using bitwise ops with prime numbers
+
+// Resizing
+ - The current plan is to increase size by x2 if num_item >= 3/4 x max_size
+ - And decrese size by /2 if num_item <= 1/4 x max_size
