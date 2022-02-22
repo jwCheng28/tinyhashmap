@@ -58,6 +58,47 @@ void delete_hashmap(hashmap *hm) {
     free(hm);
 }
 
+hashmap* new_hashmap(const unsigned int new_size) {
+    hashmap *hm = malloc(sizeof(hashmap));
+    hm->max_size = new_size;
+    hm->item_count = 0;
+    hm->obj_array = malloc(hm->max_size * sizeof(hashmap_obj*));
+    memset(hm->obj_array, 0, hm->max_size * sizeof(hashmap_obj*));
+    return hm;
+}
+
+void hm_resive(hashmap *hm, const unsigned int new_size) {
+    hashmap *new_hm = new_hashmap(new_size);
+    for (int i = 0; i < hm->max_size; ++i) {
+        if (hm->obj_array[i] && hm->obj_array[i] != &DELETED) {
+            insert_item(hm, hm->obj_array[i]->key, hm->obj_array[i]->val);
+        }
+    }
+    delete_hashmap(hm);
+    hm = new_hm;
+}
+
+void hm_size_inc(hashmap *hm) {
+    unsigned int new_size = hm->max_size<<1;
+    hm_resive(hm, new_size);
+}
+
+void hm_size_dec(hashmap *hm) {
+    unsigned int new_size = hm->max_size>>1;
+    hm_resive(hm, new_size);
+}
+
+void hm_check_resize(hashmap *hm) {
+    unsigned int quarter_max_size = hm->max_size>>2;
+    if (hm->max_size > INIT_SIZE) {
+        if (hm->item_count >= 3*quarter_max_size) {
+            hm_size_inc(hm);
+        } else if (hm->item_count <= quarter_max_size) {
+            hm_size_dec(hm);
+        }
+    }
+}
+
 unsigned int hash(const char *string, const unsigned int c) {
     unsigned int len = strlen(string);
     unsigned int res = 0;
@@ -70,24 +111,23 @@ unsigned int hash(const char *string, const unsigned int c) {
 }
 
 void insert_item(hashmap *hm, char *key, void *val) {
+    hm_check_resize(hm);
     hashmap_obj *obj = create_obj(key, val);
     unsigned int index = hash(obj->key, 0) % hm->max_size;
-    unsigned int retries = hm->max_size >> 1;
+    unsigned int retries = 3 * hm->max_size >> 2;
     unsigned int trial = 1;
     while (hm->obj_array[index] && hm->obj_array[index] != &DELETED && trial < retries) {
         index = hash(obj->key, trial) % hm->max_size;
         trial++;
-    }
-    if (trial >= retries) {
-        // TODO: increase size of map
     }
     hm->obj_array[index] = obj;
     hm->item_count++;
 }
 
 void* get_item(hashmap *hm, char *key) {
+    hm_check_resize(hm);
     unsigned int index = hash(key, 0) % hm->max_size;
-    unsigned int retries = hm->max_size >> 1;
+    unsigned int retries = 3 * hm->max_size >> 2;
     unsigned int trial = 1;
     while (hm->obj_array[index] && trial < retries) {
         if (hm->obj_array[index] != &DELETED && !strcmp(hm->obj_array[index]->key, key)) {
@@ -100,8 +140,9 @@ void* get_item(hashmap *hm, char *key) {
 }
 
 int delete_item(hashmap *hm, char *key) {
+    hm_check_resize(hm);
     unsigned int index = hash(key, 0) % hm->max_size;
-    unsigned int retries = hm->max_size >> 1;
+    unsigned int retries = 3 * hm->max_size >> 2;
     unsigned int trial = 1;
     while (hm->obj_array[index] && trial < retries) {
         if (!strcmp(hm->obj_array[index]->key, key)) {
