@@ -7,9 +7,9 @@ Hence, the goal of tinyhashmap is to create a simply hashmap that may come in ha
 ### Completed
  - hashmap creation and destructor (no memory leaks)
  - hashing function
- - insert, get, and delete function
+ - insert, get, and delete 
+ - resize function
 
 ### In Progress
- - resize function
  - full testing code
 
