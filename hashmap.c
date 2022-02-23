@@ -107,20 +107,19 @@ unsigned int hash(const char *string, const unsigned int c) {
     for (int i = 0; i < len; ++i) {
         res += (string[i]<<3) + (string[i]<<5) + (string[i]<<7);
         res ^= 1719435967;
-        res *= 11 * (c+1);
+        res *= 11;
     }
-    return res;
+    return res + c;
 }
 
 void insert_item(hashmap *hm, char *key, void *val) {
     hm_check_resize(hm);
     hashmap_obj *obj = create_obj(key, val);
     unsigned int index = hash(obj->key, 0) % hm->max_size;
-    unsigned int retries = 3 * hm->max_size >> 2;
-    unsigned int trial = 1;
-    while (hm->obj_array[index] && hm->obj_array[index] != &DELETED && trial < retries) {
-        index = hash(obj->key, trial) % hm->max_size;
-        trial++;
+    unsigned int constant = 0;
+    while (hm->obj_array[index] && hm->obj_array[index] != &DELETED && constant < hm->max_size) {
+        index = hash(obj->key, constant) % hm->max_size;
+        constant++;
     }
     hm->obj_array[index] = obj;
     hm->item_count++;
@@ -129,14 +128,13 @@ void insert_item(hashmap *hm, char *key, void *val) {
 void* get_item(hashmap *hm, char *key) {
     hm_check_resize(hm);
     unsigned int index = hash(key, 0) % hm->max_size;
-    unsigned int retries = 3 * hm->max_size >> 2;
-    unsigned int trial = 1;
-    while (hm->obj_array[index] && trial < retries) {
+    unsigned int constant = 0;
+    while (hm->obj_array[index] && constant < hm->max_size) {
         if (hm->obj_array[index] != &DELETED && !strcmp(hm->obj_array[index]->key, key)) {
             return hm->obj_array[index]->val;
         }
-        index = hash(key, trial) % hm->max_size;
-        trial++;
+        index = hash(key, constant) % hm->max_size;
+        constant++;
     }
     return NULL;
 }
@@ -144,16 +142,15 @@ void* get_item(hashmap *hm, char *key) {
 int delete_item(hashmap *hm, char *key) {
     hm_check_resize(hm);
     unsigned int index = hash(key, 0) % hm->max_size;
-    unsigned int retries = 3 * hm->max_size >> 2;
-    unsigned int trial = 1;
-    while (hm->obj_array[index] && trial < retries) {
+    unsigned int constant = 0;
+    while (hm->obj_array[index] && constant < hm->max_size) {
         if (!strcmp(hm->obj_array[index]->key, key)) {
             delete_obj(hm->obj_array[index]);
             hm->obj_array[index] = &DELETED;
             return 1;
         }
-        index = hash(key, trial) % hm->max_size;
-        trial++;
+        index = hash(key, constant) % hm->max_size;
+        constant++;
     }
     return -1;
 }
