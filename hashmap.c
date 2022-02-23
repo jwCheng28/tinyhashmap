@@ -39,13 +39,17 @@ void delete_obj(hashmap_obj *obj) {
     free(obj);
 }
 
-hashmap* create_hashmap() {
+hashmap* new_hashmap(const unsigned int new_size) {
     hashmap *hm = malloc(sizeof(hashmap));
-    hm->max_size = INIT_SIZE;
+    hm->max_size = new_size;
     hm->item_count = 0;
     hm->obj_array = malloc(hm->max_size * sizeof(hashmap_obj*));
     memset(hm->obj_array, 0, hm->max_size * sizeof(hashmap_obj*));
     return hm;
+}
+
+hashmap* create_hashmap() {
+    return new_hashmap(INIT_SIZE);
 }
 
 void delete_hashmap(hashmap *hm) {
@@ -58,34 +62,32 @@ void delete_hashmap(hashmap *hm) {
     free(hm);
 }
 
-hashmap* new_hashmap(const unsigned int new_size) {
-    hashmap *hm = malloc(sizeof(hashmap));
-    hm->max_size = new_size;
-    hm->item_count = 0;
-    hm->obj_array = malloc(hm->max_size * sizeof(hashmap_obj*));
-    memset(hm->obj_array, 0, hm->max_size * sizeof(hashmap_obj*));
-    return hm;
-}
-
-void hm_resive(hashmap *hm, const unsigned int new_size) {
+void hm_resize(hashmap *hm, const unsigned int new_size) {
     hashmap *new_hm = new_hashmap(new_size);
     for (int i = 0; i < hm->max_size; ++i) {
         if (hm->obj_array[i] && hm->obj_array[i] != &DELETED) {
-            insert_item(hm, hm->obj_array[i]->key, hm->obj_array[i]->val);
+            insert_item(new_hm, hm->obj_array[i]->key, hm->obj_array[i]->val);
         }
     }
-    delete_hashmap(hm);
-    hm = new_hm;
+    hashmap_obj **old_items = hm->obj_array;
+    hm->obj_array = new_hm->obj_array;
+    new_hm->obj_array = old_items;
+
+    new_hm->max_size = hm->max_size;
+    hm->max_size = new_size;
+
+    hm->item_count = new_hm->item_count;
+    delete_hashmap(new_hm);
 }
 
 void hm_size_inc(hashmap *hm) {
     unsigned int new_size = hm->max_size<<1;
-    hm_resive(hm, new_size);
+    hm_resize(hm, new_size);
 }
 
 void hm_size_dec(hashmap *hm) {
     unsigned int new_size = hm->max_size>>1;
-    hm_resive(hm, new_size);
+    hm_resize(hm, new_size);
 }
 
 void hm_check_resize(hashmap *hm) {
