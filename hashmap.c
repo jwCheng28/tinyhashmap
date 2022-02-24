@@ -118,8 +118,8 @@ void insert_item(hashmap *hm, char *key, void *val) {
     unsigned int index = hash(obj->key, 0) % hm->max_size;
     unsigned int constant = 0;
     while (hm->obj_array[index] && hm->obj_array[index] != &DELETED && constant < hm->max_size) {
-        index = hash(obj->key, constant) % hm->max_size;
         constant++;
+        index = hash(obj->key, constant) % hm->max_size;
     }
     hm->obj_array[index] = obj;
     hm->item_count++;
@@ -133,8 +133,8 @@ void* get_item(hashmap *hm, char *key) {
         if (hm->obj_array[index] != &DELETED && !strcmp(hm->obj_array[index]->key, key)) {
             return hm->obj_array[index]->val;
         }
-        index = hash(key, constant) % hm->max_size;
         constant++;
+        index = hash(key, constant) % hm->max_size;
     }
     return NULL;
 }
@@ -149,8 +149,8 @@ int delete_item(hashmap *hm, char *key) {
             hm->obj_array[index] = &DELETED;
             return 1;
         }
-        index = hash(key, constant) % hm->max_size;
         constant++;
+        index = hash(key, constant) % hm->max_size;
     }
     return -1;
 }
