@@ -19,6 +19,7 @@ typedef struct {
 } hashmap_obj;
 
 struct hashmap {
+    int no_resize;
     unsigned int max_size;
     unsigned int item_count;
     hashmap_obj **obj_array;
@@ -39,8 +40,9 @@ void delete_obj(hashmap_obj *obj) {
     free(obj);
 }
 
-hashmap* new_hashmap(const unsigned int new_size) {
+hashmap* new_hashmap(const unsigned int new_size, const int no_resize) {
     hashmap *hm = malloc(sizeof(hashmap));
+    hm->no_resize = no_resize;
     hm->max_size = new_size;
     hm->item_count = 0;
     hm->obj_array = malloc(hm->max_size * sizeof(hashmap_obj*));
@@ -49,7 +51,7 @@ hashmap* new_hashmap(const unsigned int new_size) {
 }
 
 hashmap* create_hashmap() {
-    return new_hashmap(INIT_SIZE);
+    return new_hashmap(INIT_SIZE, 0);
 }
 
 void delete_hashmap(hashmap *hm) {
@@ -63,7 +65,7 @@ void delete_hashmap(hashmap *hm) {
 }
 
 void hm_resize(hashmap *hm, const unsigned int new_size) {
-    hashmap *new_hm = new_hashmap(new_size);
+    hashmap *new_hm = new_hashmap(new_size, 1);
     for (int i = 0; i < hm->max_size; ++i) {
         if (hm->obj_array[i] && hm->obj_array[i] != &DELETED) {
             insert_item(new_hm, hm->obj_array[i]->key, hm->obj_array[i]->val);
@@ -77,6 +79,7 @@ void hm_resize(hashmap *hm, const unsigned int new_size) {
     hm->max_size = new_size;
 
     hm->item_count = new_hm->item_count;
+    hm->no_resize = 0;
     delete_hashmap(new_hm);
 }
 
@@ -92,12 +95,10 @@ void hm_size_dec(hashmap *hm) {
 
 void hm_check_resize(hashmap *hm) {
     unsigned int quarter_max_size = hm->max_size>>2;
-    if (hm->max_size > INIT_SIZE) {
-        if (hm->item_count >= 3*quarter_max_size) {
-            hm_size_inc(hm);
-        } else if (hm->item_count <= quarter_max_size) {
-            hm_size_dec(hm);
-        }
+    if (!hm->no_resize && hm->item_count >= 3*quarter_max_size) {
+        hm_size_inc(hm);
+    } else if (!hm->no_resize && hm->max_size > INIT_SIZE && hm->item_count <= quarter_max_size) {
+        hm_size_dec(hm);
     }
 }
 
@@ -112,8 +113,7 @@ unsigned int hash(const char *string, const unsigned int c) {
     return res + c;
 }
 
-void insert_item(hashmap *hm, char *key, void *val) {
-    hm_check_resize(hm);
+int insert_item(hashmap *hm, char *key, void *val) {
     hashmap_obj *obj = create_obj(key, val);
     unsigned int index = hash(obj->key, 0) % hm->max_size;
     unsigned int constant = 0;
@@ -121,12 +121,16 @@ void insert_item(hashmap *hm, char *key, void *val) {
         constant++;
         index = hash(obj->key, constant) % hm->max_size;
     }
+    if (constant >= hm->max_size) {
+        return -1;
+    }
     hm->obj_array[index] = obj;
     hm->item_count++;
+    hm_check_resize(hm);
+    return 1;
 }
 
 void* get_item(hashmap *hm, char *key) {
-    hm_check_resize(hm);
     unsigned int index = hash(key, 0) % hm->max_size;
     unsigned int constant = 0;
     while (hm->obj_array[index] && constant < hm->max_size) {
@@ -140,13 +144,14 @@ void* get_item(hashmap *hm, char *key) {
 }
 
 int delete_item(hashmap *hm, char *key) {
-    hm_check_resize(hm);
     unsigned int index = hash(key, 0) % hm->max_size;
     unsigned int constant = 0;
     while (hm->obj_array[index] && constant < hm->max_size) {
         if (!strcmp(hm->obj_array[index]->key, key)) {
             delete_obj(hm->obj_array[index]);
             hm->obj_array[index] = &DELETED;
+            hm->item_count--;
+            hm_check_resize(hm);
             return 1;
         }
         constant++;

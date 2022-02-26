@@ -7,7 +7,7 @@ typedef struct hashmap hashmap;
 hashmap* create_hashmap();
 void delete_hashmap(hashmap *hm);
 
-void insert_item(hashmap *hm, char *key, void *val);
+int insert_item(hashmap *hm, char *key, void *val);
 void* get_item(hashmap *hm, char *key);
 int delete_item(hashmap *hm, char *key);
 
