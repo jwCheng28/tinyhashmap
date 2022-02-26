@@ -9,7 +9,5 @@ Hence, the goal of tinyhashmap is to create a simply hashmap that may come in ha
  - hashing function
  - insert, get, and delete 
  - resize function
-
-### In Progress
  - full testing code
 
