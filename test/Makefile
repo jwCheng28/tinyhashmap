@@ -9,5 +9,8 @@ $(exe): ../*.c test.c
 debug: ../*.c
 	$(CC) $(DEBUG_FLAGS) ../*.c test.c -o $(exe)
 
+check:
+	cppcheck --std=c11 --enable=all --suppress=missingIncludeSystem --suppress=unusedFunction -I../ ../
+
 clean:
 	rm -f *.o $(exe)
