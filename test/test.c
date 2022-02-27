@@ -26,6 +26,21 @@ void hm_insert_test_key_val(hashmap *hm, char key_array[][STRSIZE], char val_arr
     }
 }
 
+void hm_delete_test_key_val(hashmap *hm, char key_array[][STRSIZE], int arr_len) {
+    int success = 0;
+    for (int i = 0; i < arr_len; ++i) {
+        printf("Deleting key (%s)\n", key_array[i]);
+        if (delete_item(hm, key_array[i])==1) {
+            success++;
+            printf("Delete success\n");
+        } else {
+            printf("Delete failed\n");
+        }
+        fflush(stdout);
+    }
+    printf("%d/%d successful deletes\n", success, arr_len);
+}
+
 void hm_check_key_val(hashmap *hm, char key_array[][STRSIZE], char val_array[][STRSIZE], int arr_len) {
     int correct = 0;
     for (int i = 0; i < arr_len; ++i) {
@@ -39,6 +54,7 @@ void hm_check_key_val(hashmap *hm, char key_array[][STRSIZE], char val_array[][S
             correct++;
             printf("Get success (value: %s)\n", stored_val);
         }
+        fflush(stdout);
     }
     printf("%d/%d matching key values\n", correct, arr_len);
 }
@@ -57,6 +73,7 @@ int main(int argc, char **argv) {
     }
     hm_insert_test_key_val(hm, key_array, val_array, arr_size);
     hm_check_key_val(hm, key_array, val_array, arr_size);
+    hm_delete_test_key_val(hm, key_array, arr_size);
 
     delete_hashmap(hm);
     return 0;
