@@ -102,7 +102,7 @@ void hm_check_resize(hashmap *hm) {
     }
 }
 
-unsigned int hash(const char *string, const unsigned int c) {
+unsigned int hash(const char *string) {
     unsigned int len = strlen(string);
     unsigned int res = 0;
     for (int i = 0; i < len; ++i) {
@@ -110,18 +110,19 @@ unsigned int hash(const char *string, const unsigned int c) {
         res ^= 1719435967;
         res *= 11;
     }
-    return res + c;
+    return res;
 }
 
 int insert_item(hashmap *hm, char *key, void *val) {
     hashmap_obj *obj = create_obj(key, val);
-    unsigned int index = hash(obj->key, 0) % hm->max_size;
-    unsigned int constant = 0;
-    while (hm->obj_array[index] && hm->obj_array[index] != &DELETED && constant < hm->max_size) {
-        constant++;
-        index = hash(obj->key, constant) % hm->max_size;
+    unsigned int keyhash = hash(obj->key);
+    unsigned int index = keyhash % hm->max_size;
+    unsigned int shift = 0;
+    while (hm->obj_array[index] && hm->obj_array[index] != &DELETED && shift < hm->max_size) {
+        shift++;
+        index = (keyhash + shift) % hm->max_size;
     }
-    if (constant >= hm->max_size) {
+    if (shift >= hm->max_size) {
         return -1;
     }
     hm->obj_array[index] = obj;
@@ -131,22 +132,24 @@ int insert_item(hashmap *hm, char *key, void *val) {
 }
 
 void* get_item(hashmap *hm, char *key) {
-    unsigned int index = hash(key, 0) % hm->max_size;
-    unsigned int constant = 0;
-    while (hm->obj_array[index] && constant < hm->max_size) {
+    unsigned int keyhash = hash(key);
+    unsigned int index = keyhash % hm->max_size;
+    unsigned int shift = 0;
+    while (hm->obj_array[index] && shift < hm->max_size) {
         if (hm->obj_array[index] != &DELETED && !strcmp(hm->obj_array[index]->key, key)) {
             return hm->obj_array[index]->val;
         }
-        constant++;
-        index = hash(key, constant) % hm->max_size;
+        shift++;
+        index = (keyhash + shift) % hm->max_size;
     }
     return NULL;
 }
 
 int delete_item(hashmap *hm, char *key) {
-    unsigned int index = hash(key, 0) % hm->max_size;
-    unsigned int constant = 0;
-    while (hm->obj_array[index] && constant < hm->max_size) {
+    unsigned int keyhash = hash(key);
+    unsigned int index = keyhash % hm->max_size;
+    unsigned int shift = 0;
+    while (hm->obj_array[index] && shift < hm->max_size) {
         if (hm->obj_array[index] != &DELETED && !strcmp(hm->obj_array[index]->key, key)) {
             delete_obj(hm->obj_array[index]);
             hm->obj_array[index] = &DELETED;
@@ -154,8 +157,8 @@ int delete_item(hashmap *hm, char *key) {
             hm_check_resize(hm);
             return 1;
         }
-        constant++;
-        index = hash(key, constant) % hm->max_size;
+        shift++;
+        index = (keyhash + shift) % hm->max_size;
     }
     return -1;
 }
