@@ -147,7 +147,7 @@ int delete_item(hashmap *hm, char *key) {
     unsigned int index = hash(key, 0) % hm->max_size;
     unsigned int constant = 0;
     while (hm->obj_array[index] && constant < hm->max_size) {
-        if (!strcmp(hm->obj_array[index]->key, key)) {
+        if (hm->obj_array[index] != &DELETED && !strcmp(hm->obj_array[index]->key, key)) {
             delete_obj(hm->obj_array[index]);
             hm->obj_array[index] = &DELETED;
             hm->item_count--;
